@@ -1,0 +1,500 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww10680\viewh13100\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 > # Alex Nestorov\
+> # Econ 613\
+> # Assignment #4\
+> \
+> install.packages("nlme")\
+Error in install.packages : Updating loaded packages\
+> library(nlme)\
+> install.packages("nlme")\
+trying URL 'https://cran.rstudio.com/bin/macosx/el-capitan/contrib/3.5/nlme_3.1-139.tgz'\
+Content type 'application/x-gzip' length 2365931 bytes (2.3 MB)\
+==================================================\
+downloaded 2.3 MB\
+\
+\
+The downloaded binary packages are in\
+	/var/folders/x9/rx8wwzkn7_95zp76rxwxswkm0000gn/T//RtmpvO0Wj2/downloaded_packages\
+> install.packages("nnet")\
+Error in install.packages : Updating loaded packages\
+> library(nnet)\
+> install.packages("nnet")\
+trying URL 'https://cran.rstudio.com/bin/macosx/el-capitan/contrib/3.5/nnet_7.3-12.tgz'\
+Content type 'application/x-gzip' length 128112 bytes (125 KB)\
+==================================================\
+downloaded 125 KB\
+\
+\
+The downloaded binary packages are in\
+	/var/folders/x9/rx8wwzkn7_95zp76rxwxswkm0000gn/T//RtmpvO0Wj2/downloaded_packages\
+> ######################################\
+> ############# Exercise 1 #############\
+> ######################################\
+> ## I begin by installing the reshape package which will help me manipulate the data set from long \
+> ## to wide format.\
+> install.packages("reshape2")\
+Error in install.packages : Updating loaded packages\
+> library(reshape2)\
+> install.packages("reshape2")\
+trying URL 'https://cran.rstudio.com/bin/macosx/el-capitan/contrib/3.5/reshape2_1.4.3.tgz'\
+Content type 'application/x-gzip' length 286207 bytes (279 KB)\
+==================================================\
+downloaded 279 KB\
+\
+\
+The downloaded binary packages are in\
+	/var/folders/x9/rx8wwzkn7_95zp76rxwxswkm0000gn/T//RtmpvO0Wj2/downloaded_packages\
+> ## I have downloaded the Koop-Tobias dataset and load it into my environment.\
+> data <- read.csv("~/Documents/ECON 613/Koop-Tobias.csv")\
+> \
+> ## I create a wide data table by person, i.e. a row for each PERSONID that has their wage in each\
+> ## of the possible time periods from 0 to 14 based on TIMETRND. This produces "na" in many cases\
+> ## as we do not have data for each time period for each person. I re-label the column names.\
+> wage_data_wide <- dcast(data, PERSONID ~ TIMETRND, value.var = "LOGWAGE")\
+> colnames(wage_data_wide) <- c("PERSONID", "lwage_time0", "lwage_time1", "lwage_time2", \
++                               "lwage_time3", "lwage_time4", "lwage_time5", "lwage_time6", \
++                               "lwage_time7", "lwage_time8", "lwage_time9", "lwage_time10", \
++                               "lwage_time11", "lwage_time12", "lwage_time13", "lwage_time14")\
+> \
+> ## I set a seed to have the same random numbers generated each time.\
+> set.seed(15)\
+> ## I then create a random sample of 5 individuals.\
+> sample_five <- as.data.frame(sample(wage_data_wide$PERSONID, size = 5))\
+> colnames(sample_five) <- "PERSONID"\
+> ## Finally, I merge the wage data for these 5 random individuals into a data table and present it.\
+> random_five <- merge(wage_data_wide, sample_five, by = "PERSONID")\
+> print(random_five)\
+  PERSONID lwage_time0 lwage_time1 lwage_time2 lwage_time3 lwage_time4 lwage_time5\
+1      425          NA          NA          NA          NA          NA          NA\
+2      799          NA          NA          NA          NA          NA          NA\
+3     1312          NA          NA          NA          NA          NA          NA\
+4     1416          NA          NA          NA        2.19          NA          NA\
+5     2104          NA          NA          NA        1.79        1.83          NA\
+  lwage_time6 lwage_time7 lwage_time8 lwage_time9 lwage_time10 lwage_time11 lwage_time12\
+1          NA          NA          NA          NA         2.02         2.19         1.74\
+2          NA          NA          NA          NA         2.65         2.68         3.30\
+3          NA          NA          NA          NA           NA           NA           NA\
+4        2.03          NA          NA          NA           NA         1.73         1.95\
+5        1.80        2.15        2.49        2.42         2.69         2.41         2.75\
+  lwage_time13 lwage_time14\
+1         2.03         2.19\
+2         3.13         2.55\
+3         2.66           NA\
+4         1.85         1.58\
+5         2.95         3.10\
+> ######################################\
+> ############# Exercise 2 #############\
+> ######################################\
+> ## I can estimate the random effects model under the normality assumption in two ways. I can do\
+> ## it using either regular OLS or GLS, but I obtain the same result. These are both good \
+> ## approximations of the random effects model and the results are identical. I choose to go with\
+> ## the GLS estimation here.\
+> re_GLS <- gls(LOGWAGE ~ EDUC + POTEXPER, data)\
+> re_coeffs <- as.data.frame(re_GLS$coefficients)\
+> print(re_coeffs)\
+            re_GLS$coefficients\
+(Intercept)          0.79419112\
+EDUC                 0.09386374\
+POTEXPER             0.03740530\
+> ## These results are slightly different from those found by the regular random effect formula\
+> ## but serve as a strong approximation. The standard errors will also be slightly different.\
+> ######################################\
+> ############# Exercise 3 #############\
+> ######################################\
+> ## I first have to reshape the data so that it is in wide format for the fixed effect regressions.\
+> ## In other words, I need each time's recording of logwage, education, and experience to now be\
+> ## a separate column for each person, with "NA" where we do not have the data.\
+> data_wide <- recast(data, PERSONID ~ TIMETRND + variable, measure.var = c("LOGWAGE", "EDUC", \
++                                                                           "POTEXPER"))\
+> ## I then re-order the data so that all logwage columns are together, all education columns are \
+> ## together, and all experience columns are together for easier view.\
+> data_wide <- data_wide[, c(1, 2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44, 3, 6, 9, 12, \
++                            15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 4, 7, 10, 13, 16, 19, 22, 25,\
++                            28, 31, 34, 37, 40, 43, 46)]\
+> \
+> ## Between estimator\
+> ## I now calculate the average logwage, average education, and average experience that I will need\
+> ## for the between estimator.\
+> data_wide$avg_wage <- rowMeans(data_wide[, 2:16], na.rm = TRUE)\
+> data_wide$avg_educ <- rowMeans(data_wide[, 17:31], na.rm = TRUE)\
+> data_wide$avg_exper <- rowMeans(data_wide[, 32:46], na.rm = TRUE)\
+> \
+> ## I then regress the average wage on the average education and experience and then print the\
+> ## coefficients.\
+> btwn_lm <- lm(avg_wage ~ avg_educ + avg_exper, data_wide)\
+> btwn_coeffs <- as.data.frame(btwn_lm$coefficients)\
+> rownames(btwn_coeffs) <- c("Intercept", "EDUC", "POTEXPER")\
+> print(btwn_coeffs)\
+          btwn_lm$coefficients\
+Intercept           0.84556883\
+EDUC                0.09309987\
+POTEXPER            0.02599874\
+> \
+> ## Within estimator\
+> ## For the within estimator, I have to again reshape the data from wide to long so that we no\
+> ## longer have separate columns for each time period for each relevant variable. I also bring in\
+> ## the averages that were calculated in the last section as those will be necessary for the \
+> ## calculation of the within estimator.\
+> data_long <- merge(data, data_wide[, c(1, 47:49)], by = "PERSONID")\
+> \
+> ## I calculate the difference between actual values and averages for logwage, education, and\
+> ## experience for each person as these will be used to get the within estimators.\
+> data_long$within_wage <- data_long$LOGWAGE - data_long$avg_wage\
+> data_long$within_educ <- data_long$EDUC - data_long$avg_educ\
+> data_long$within_exper <- data_long$POTEXPER - data_long$avg_exper\
+> \
+> ## I then use these calculated within columns and regress the within wage on within education and\
+> ## experience, adding a 0 so that a constant term is not included. I then save and print the\
+> ## coefficients.\
+> within_lm <- lm(within_wage ~ 0 + within_educ + within_exper, data_long)\
+> within_coeffs <- as.data.frame(within_lm$coefficients)\
+> within_coeffs <- rbind("na", within_coeffs)\
+> rownames(within_coeffs) <- c("Intercept", "EDUC", "POTEXPER")\
+> print(within_coeffs)\
+          within_lm$coefficients\
+Intercept                     na\
+EDUC           0.123662019393917\
+POTEXPER      0.0385610653239284\
+> \
+> ## First Time Difference Estimator\
+> ## Finally, I have to calculate the first difference for each person. I do this for the time trend\
+> ## the logwage, education, and experience. I do so for the time trend so that I can capture those\
+> ## differences where they are consecutive periods for each person. For example,  if the rows\
+> ## contained for each person show data in time period 0, then 7, then 8, then 11, I only want to\
+> ## capture the first difference for time period 7 to 8 since those are consecutive periods.\
+> data_long$timetrnd_diff <- unlist(by(data_long$TIMETRND, list(data_long$PERSONID), \
++                                      function(i) c(NA,diff(i))))\
+> data_long$wage_diff <- unlist(by(data_long$LOGWAGE, data_long$PERSONID, function(i) c(NA,diff(i))))\
+> data_long$educ_diff <- unlist(by(data_long$EDUC, list(data_long$PERSONID), \
++                                  function(i) c(NA,diff(i))))\
+> data_long$exper_diff <- unlist(by(data_long$POTEXPER, list(data_long$PERSONID), \
++                                   function(i) c(NA,diff(i))))\
+> \
+> ## I then regress the first difference of the logwage on that of education and experience, again\
+> ## making sure that there is no constant and only regressing when we have consecutive time periods,\
+> ## per the description above. I save and print the coefficients.\
+> diff_lm <- lm(wage_diff ~ 0 + educ_diff + exper_diff, subset(data_long, timetrnd_diff == 1))\
+> diff_coeffs <- as.data.frame(diff_lm$coefficients)\
+> diff_coeffs <- rbind("na", diff_coeffs)\
+> rownames(diff_coeffs) <- c("Intercept", "EDUC", "POTEXPER")\
+> print(diff_coeffs)\
+          diff_lm$coefficients\
+Intercept                   na\
+EDUC        0.0431083844580777\
+POTEXPER    0.0535369458128085\
+> \
+> ## Finally, I gather all of the coefficients together in order to compare them.\
+> fe_coeffs <- cbind(btwn_coeffs, within_coeffs, diff_coeffs)\
+> colnames(fe_coeffs) <- c("Between Estimators", "Within Estimators", "First Diff Estimators")\
+> print(fe_coeffs)\
+          Between Estimators  Within Estimators First Diff Estimators\
+Intercept         0.84556883                 na                    na\
+EDUC              0.09309987  0.123662019393917    0.0431083844580777\
+POTEXPER          0.02599874 0.0385610653239284    0.0535369458128085\
+> \
+> ## We can see that the estimates differ quite a bit between the different models. This is obvious\
+> ## given the estimation processes are different. The values are also interpreted differently among\
+> ## the different models. There is a constant in the between model but there are no constants in \
+> ## the within or first difference models.\
+> ######################################\
+> ############# Exercise 4 #############\
+> ######################################\
+> ## To get 100 random individuals, I follow the exact same process as in exercise 1 but I keep the\
+> ## long data set rather than just pulling out the wage data for each person.\
+> sample_100 <- as.data.frame(sample(wage_data_wide$PERSONID, size = 100))\
+> colnames(sample_100) <- "PERSONID"\
+> data_long_100 <- merge(data_long, sample_100, by = "PERSONID")\
+> print(data_long_100)\
+   PERSONID EDUC LOGWAGE POTEXPER TIMETRND ABILITY MOTHERED FATHERED BRKNHOME SIBLINGS avg_wage avg_educ\
+1        24   12    1.59        2        4   -0.94       12       17        0        3 1.720000     12.5\
+2        24   13    1.85        4        7   -0.94       12       17        0        3 1.720000     12.5\
+3        26   17    3.50        6       13    1.22       17       16        0        1 3.420000     17.0\
+4        26   17    3.42        5       12    1.22       17       16        0        1 3.420000     17.0\
+5        26   17    3.34        7       14    1.22       17       16        0        1 3.420000     17.0\
+6       126   12    2.17        2        1    0.25       12       16        0        1 2.404000     12.0\
+7       126   12    2.18        8        7    0.25       12       16        0        1 2.404000     12.0\
+8       126   12    2.20        1        0    0.25       12       16        0        1 2.404000     12.0\
+9       126   12    2.30        7        6    0.25       12       16        0        1 2.404000     12.0\
+10      126   12    2.73       12       11    0.25       12       16        0        1 2.404000     12.0\
+11      126   12    1.87        4        3    0.25       12       16        0        1 2.404000     12.0\
+12      126   12    2.30        3        2    0.25       12       16        0        1 2.404000     12.0\
+13      126   12    2.06        5        4    0.25       12       16        0        1 2.404000     12.0\
+14      126   12    2.70        9        8    0.25       12       16        0        1 2.404000     12.0\
+15      126   12    2.75       11       10    0.25       12       16        0        1 2.404000     12.0\
+16      126   12    2.63       14       13    0.25       12       16        0        1 2.404000     12.0\
+17      126   12    2.69       15       14    0.25       12       16        0        1 2.404000     12.0\
+18      126   12    2.67       13       12    0.25       12       16        0        1 2.404000     12.0\
+19      126   12    2.75       10        9    0.25       12       16        0        1 2.404000     12.0\
+20      126   12    2.06        6        5    0.25       12       16        0        1 2.404000     12.0\
+21      192   12    2.19        5        1    0.69       12       15        1        1 2.473333     12.0\
+22      192   12    2.81       12        8    0.69       12       15        1        1 2.473333     12.0\
+23      192   12    2.29        7        3    0.69       12       15        1        1 2.473333     12.0\
+24      192   12    2.40        6        2    0.69       12       15        1        1 2.473333     12.0\
+25      192   12    2.45       18       14    0.69       12       15        1        1 2.473333     12.0\
+26      192   12    2.40        8        4    0.69       12       15        1        1 2.473333     12.0\
+27      192   12    2.31       16       12    0.69       12       15        1        1 2.473333     12.0\
+28      192   12    2.14        4        0    0.69       12       15        1        1 2.473333     12.0\
+29      192   12    2.59       11        7    0.69       12       15        1        1 2.473333     12.0\
+30      192   12    2.52       15       11    0.69       12       15        1        1 2.473333     12.0\
+31      192   12    2.74       10        6    0.69       12       15        1        1 2.473333     12.0\
+32      192   12    2.84        9        5    0.69       12       15        1        1 2.473333     12.0\
+33      198   12    2.30        5        1    0.56       12       12        0        3 2.272500     12.0\
+34      198   12    2.05        4        0    0.56       12       12        0        3 2.272500     12.0\
+35      198   12    2.30        6        2    0.56       12       12        0        3 2.272500     12.0\
+36      198   12    2.44        7        3    0.56       12       12        0        3 2.272500     12.0\
+37      208   12    2.76       12        9   -0.24       12       16        0        5 2.590000     12.0\
+38      208   12    2.66       14       11   -0.24       12       16        0        5 2.590000     12.0\
+39      208   12    2.32        6        3   -0.24       12       16        0        5 2.590000     12.0\
+40      208   12    2.79       15       12   -0.24       12       16        0        5 2.590000     12.0\
+41      208   12    2.55       11        8   -0.24       12       16        0        5 2.590000     12.0\
+42      208   12    2.39        3        0   -0.24       12       16        0        5 2.590000     12.0\
+43      208   12    3.23       13       10   -0.24       12       16        0        5 2.590000     12.0\
+44      208   12    2.54       10        7   -0.24       12       16        0        5 2.590000     12.0\
+45      208   12    2.43        8        5   -0.24       12       16        0        5 2.590000     12.0\
+46      208   12    2.11        5        2   -0.24       12       16        0        5 2.590000     12.0\
+47      208   12    2.99       16       13   -0.24       12       16        0        5 2.590000     12.0\
+48      208   12    2.39        7        4   -0.24       12       16        0        5 2.590000     12.0\
+49      208   12    2.51        9        6   -0.24       12       16        0        5 2.590000     12.0\
+50      228   11    2.14        9        5   -0.34       11       12        1        6 2.289167     11.0\
+   avg_exper within_wage within_educ within_exper timetrnd_diff wage_diff educ_diff exper_diff\
+1   3.000000 -0.13000000        -0.5  -1.00000000            NA        NA        NA         NA\
+2   3.000000  0.13000000         0.5   1.00000000             3      0.26         1          2\
+3   6.000000  0.08000000         0.0   0.00000000             1      0.08         0          1\
+4   6.000000  0.00000000         0.0  -1.00000000            NA        NA        NA         NA\
+5   6.000000 -0.08000000         0.0   1.00000000             1     -0.16         0          1\
+6   8.000000 -0.23400000         0.0  -6.00000000             1     -0.03         0          1\
+7   8.000000 -0.22400000         0.0   0.00000000             1     -0.12         0          1\
+8   8.000000 -0.20400000         0.0  -7.00000000            NA        NA        NA         NA\
+9   8.000000 -0.10400000         0.0  -1.00000000             1      0.24         0          1\
+10  8.000000  0.32600000         0.0   4.00000000             1     -0.02         0          1\
+11  8.000000 -0.53400000         0.0  -4.00000000             1     -0.43         0          1\
+12  8.000000 -0.10400000         0.0  -5.00000000             1      0.13         0          1\
+13  8.000000 -0.34400000         0.0  -3.00000000             1      0.19         0          1\
+14  8.000000  0.29600000         0.0   1.00000000             1      0.52         0          1\
+15  8.000000  0.34600000         0.0   3.00000000             1      0.00         0          1\
+16  8.000000  0.22600000         0.0   6.00000000             1     -0.04         0          1\
+17  8.000000  0.28600000         0.0   7.00000000             1      0.06         0          1\
+18  8.000000  0.26600000         0.0   5.00000000             1     -0.06         0          1\
+19  8.000000  0.34600000         0.0   2.00000000             1      0.05         0          1\
+20  8.000000 -0.34400000         0.0  -2.00000000             1      0.00         0          1\
+21 10.083333 -0.28333333         0.0  -5.08333333             1      0.05         0          1\
+22 10.083333  0.33666667         0.0   1.91666667             1      0.22         0          1\
+23 10.083333 -0.18333333         0.0  -3.08333333             1     -0.11         0          1\
+24 10.083333 -0.07333333         0.0  -4.08333333             1      0.21         0          1\
+25 10.083333 -0.02333333         0.0   7.91666667             2      0.14         0          2\
+26 10.083333 -0.07333333         0.0  -2.08333333             1      0.11         0          1\
+27 10.083333 -0.16333333         0.0   5.91666667             1     -0.21         0          1\
+28 10.083333 -0.33333333         0.0  -6.08333333            NA        NA        NA         NA\
+29 10.083333  0.11666667         0.0   0.91666667             1     -0.15         0          1\
+30 10.083333  0.04666667         0.0   4.91666667             3     -0.29         0          3\
+31 10.083333  0.26666667         0.0  -0.08333333             1     -0.10         0          1\
+32 10.083333  0.36666667         0.0  -1.08333333             1      0.44         0          1\
+33  5.500000  0.02750000         0.0  -0.50000000             1      0.25         0          1\
+34  5.500000 -0.22250000         0.0  -1.50000000            NA        NA        NA         NA\
+35  5.500000  0.02750000         0.0   0.50000000             1      0.00         0          1\
+36  5.500000  0.16750000         0.0   1.50000000             1      0.14         0          1\
+37  9.923077  0.17000000         0.0   2.07692308             1      0.21         0          1\
+38  9.923077  0.07000000         0.0   4.07692308             1     -0.57         0          1\
+39  9.923077 -0.27000000         0.0  -3.92307692             1      0.21         0          1\
+40  9.923077  0.20000000         0.0   5.07692308             1      0.13         0          1\
+41  9.923077 -0.04000000         0.0   1.07692308             1      0.01         0          1\
+42  9.923077 -0.20000000         0.0  -6.92307692            NA        NA        NA         NA\
+43  9.923077  0.64000000         0.0   3.07692308             1      0.47         0          1\
+44  9.923077 -0.05000000         0.0   0.07692308             1      0.03         0          1\
+45  9.923077 -0.16000000         0.0  -1.92307692             1      0.04         0          1\
+46  9.923077 -0.48000000         0.0  -4.92307692             2     -0.28         0          2\
+47  9.923077  0.40000000         0.0   6.07692308             1      0.20         0          1\
+48  9.923077 -0.20000000         0.0  -2.92307692             1      0.07         0          1\
+49  9.923077 -0.08000000         0.0  -0.92307692             1      0.08         0          1\
+50 12.500000 -0.14916667         0.0  -3.50000000             1      0.02         0          1\
+ [ reached 'max' / getOption("max.print") -- omitted 751 rows ]\
+> \
+> ## I now turn to writing and optimizing the likelihood and estimating the individual fixed effect \
+> ## parameters. First, I create X and Y matrices with the X matrix containing the person ID, \
+> ## education, and experience columns and the Y matrix containing the log wage data. I also create\
+> ## a parameter vector that will house the 100 alphas, 2 betas (1 each for education and experience)\
+> ## and the standard deviation for my maximum likelihood formula. The standard deviation has to be\
+> ## <>0, so I pick 1 here to start.\
+> ind_FE_X <- as.matrix(data_long_100[, c(1:2, 4)])\
+> ind_FE_Y <- as.matrix(data_long_100[, c(3)])\
+> parameters <- as.vector(c(rep(0, 102), 1))\
+> \
+> ## I then create my maximum likelihood formula, with each of the three above as inputs - an X \
+> ## matrix, a Y matrix, and a parameter vector.\
+> ind_FE_mll <- function (X, Y, p) \{\
++   ## I create a new data frame so that I can map my 100 sampled (unique) person IDs to the alphas.\
++   ## The alphas are based on the parameter vector that is entered at beginning of the function.\
++   PID_map <- data.frame(PID = c(unique(X[, 1])), Ps = p[1:length(unique(X[, 1]))])\
++   ## I create an alphas data frame where I can bring together the parameters and the unique PIDs.\
++   alphas <- PID_map$Ps[match(X[, 1], PID_map$PID)] \
++   ## I create the X*beta matrix which multiplies the education and experience columns with the \
++   ## two betas in the parameter vector and then adds the alphas above.\
++   XB <- as.matrix(X[, c(2:3)])%*%p[101:102] + alphas\
++   ## Finally, I calculate the (negative) log likelihood of the function assuming a standard \
++   ## normal distribution of the error terms (Y - XB) and the standard deviation in my parameter\
++   ## vector.\
++   -sum(log(dnorm(Y - XB, sd = p[103])))\
++ \}\
+> \
+> ind_FE_mll(ind_FE_X, ind_FE_Y, parameters)\
+[1] 2880.008\
+> ## I run the maximum likelihood function and obtain 2880.008 for this initial entry.\
+> \
+> ## Now, I need to optimize the likelihood in order to estimate the individual fixed effect \
+> ## parameters. I use nlm to do so, and begin testing various starting points for the \
+> ## parameter vector that I enter into my function above. I am looking for the lowest \
+> ## minimum produced.\
+> nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, rep(-2, 103))$minimum\
+[1] 1.797693e+308\
+There were 50 or more warnings (use warnings() to see the first 50)\
+> ## The function blows up (min = 1.80e308), so this is obviously not a good place to start.\
+> nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, rep(-1, 103))$minimum\
+[1] 1.797693e+308\
+There were 50 or more warnings (use warnings() to see the first 50)\
+> ## The case is the same here, min = 1.80e308\
+> nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, parameters)$minimum\
+[1] 245.0816\
+Warning messages:\
+1: In nlm(ind_FE_mll, X = ind_FE_X, Y = ind_FE_Y, parameters) :\
+  NA/Inf replaced by maximum positive value\
+2: In nlm(ind_FE_mll, X = ind_FE_X, Y = ind_FE_Y, parameters) :\
+  NA/Inf replaced by maximum positive value\
+3: In nlm(ind_FE_mll, X = ind_FE_X, Y = ind_FE_Y, parameters) :\
+  NA/Inf replaced by maximum positive value\
+> ## This shows more promise, min = 245.08.\
+> nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, rep(1, 103))$minimum\
+[1] 242.6137\
+There were 50 or more warnings (use warnings() to see the first 50)\
+> ## Even better, min = 242.6137.\
+> nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, rep(1.5, 103))$minimum\
+[1] 242.6136\
+There were 46 warnings (use warnings() to see them)\
+> ## Seems to be slightly better, min = 242.6136.\
+> nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, rep(2, 103))$minimum\
+[1] 242.6137\
+There were 50 or more warnings (use warnings() to see the first 50)\
+> ## Seems to go back up to 242.6137, so we will stop here.\
+> \
+> ## Given that using 1.5 as the starting point for the parameters seems to give the best\
+> ## estimate, this is the model I will use to calculate the estimates of the individual\
+> ## fixed effects for each person. I then save them.\
+> ind_FE_coeffs <- nlm(ind_FE_mll, X=ind_FE_X, Y=ind_FE_Y, rep(2, 103))$estimate\
+There were 50 or more warnings (use warnings() to see the first 50)\
+> \
+> ## I then bind the alphas into a data frame providing each alpha to the respective person\
+> ## ID for 100 rows.\
+> ind_alphas <- cbind.data.frame(unique(ind_FE_X[, 1]), ind_FE_coeffs[1:100])\
+> colnames(ind_alphas) <- c("PERSONID", "alpha_hat")\
+> \
+> ## Finally, I bring the invariant variables data into the data frame with the alphas so\
+> ## that I can calculate the regression.\
+> ind_data <- merge(ind_alphas, data_long_100[!duplicated(data_long_100$PERSONID), \
++                                             c(1, 6:10)], by = "PERSONID")\
+> \
+> ## I run a regression of estimated individual fixed effects on the invariant variables.\
+> ## I save and print them as well.\
+> ind_FE_lm <- lm(alpha_hat ~ ABILITY + MOTHERED + FATHERED + BRKNHOME + SIBLINGS, ind_data)\
+> print(ind_FE_lm)\
+\
+Call:\
+lm(formula = alpha_hat ~ ABILITY + MOTHERED + FATHERED + BRKNHOME + \
+    SIBLINGS, data = ind_data)\
+\
+Coefficients:\
+(Intercept)      ABILITY     MOTHERED     FATHERED     BRKNHOME     SIBLINGS  \
+   -0.85681     -0.10028      0.03065     -0.01911     -0.02627     -0.02298  \
+\
+> \
+> ## Finally, we know that standard errors here may be inconsistently estimated. This is\
+> ## because any time one has a multi-step regression process, you create errors. When we\
+> ## run the first regression to get our alpha_hats, we are estimating these alpha_hats \
+> ## and so these individual fixed effect parameters have an error term associated with\
+> ## them. When we then run our second regression of these individual estimated fixed\
+> ## effects on the invariant variables, we are now treatubg these alpha_hats as if they\
+> ## are actual data without an error, but they are not. Thus, we are ignoring the error\
+> ## term that came with estimating them. There is measurement error. In order to avoid \
+> ## this measurement error, we can bootstrap the standard errors, as we have done in\
+> ## previous problem sets.\
+> \
+> ## I start off by creating my bootstrap function which takes as inputs the data frame\
+> ## that I will be using and number of repetitions.\
+> bootstrap <- function(data, reps) \{\
++   ## I create a matrix with the number of rows based on number of repetitions of the \
++   ## bootstrap and number of columns of invariant variables + one for the intercept.\
++   ## I rename the columns appropriately.\
++   beta_boot <- matrix(0, reps, 6)\
++   colnames(beta_boot) <- c("Intercept", "ABILITY", "MOTHERED", "FATHERED", "BRKNHOME", \
++                            "SIBLINGS") \
++   ## I then begin my for loop using the number of repetitions again.\
++   for (i in 1:reps) \{\
++     ## I create a sample data frame that will pull in a unique group of people IDs \
++     ## from the subsample of 100 every time that the loop runs and will do so with\
++     ## replacement.\
++     boot_sample <- as.data.frame(sample(unique(data$PERSONID), 100, replace = TRUE))\
++     colnames(boot_sample) <- "PERSONID"\
++     ## I merge the rest of the relevant data from the 100 subsample into a new data\
++     ## frame.\
++     boot_data <- merge(data, boot_sample, by = "PERSONID")\
++     ## I then need to create dummy variables for each person within this sample of \
++     ## the sample in order to be able to run the OLS regression on these dummies.\
++     sub_boot_data <- with(boot_data[, c(1:4)], data.frame(class.ind(PERSONID), EDUC, \
++                                                           LOGWAGE, POTEXPER))\
++     ## I then run the OLS regression of logwage on these dummy variables and educ\
++     ## and experience columns.\
++     boot_OLS <- lm(LOGWAGE ~ ., sub_boot_data) \
++     ## I pull out the alphas for the sample of the sample so there is a fixed effect\
++     ## coefficient for each individual in this smaller sample from the 100 (given \
++     ## there are going to be repeats as we selected replacement).\
++     est_alphas <- as.vector(boot_OLS$coefficients\
++                             [2:(length(unique(boot_data$PERSONID))+1)]) \
++     ## Finally, I pull out the unique rows and relevant invariant data from the \
++     ## data frame created above into a smaller one that will have a row for each\
++     ## person so that I can run the OLS. I also bring in the alphas from the above\
++     ## data frame so I have them together with the invariant variables.\
++     sub_boot_data_2 <- unique(boot_data[, c(1, 6:10)])\
++     sub_boot_data_2$alphas <- est_alphas \
++     ## I run the regression and then save the coefficients in the empty matrix I \
++     ## created above, and then the for loop runs again until it fills that matrix.\
++     boot_ind_FE_OLS <- lm(alphas ~ ABILITY + MOTHERED + FATHERED + BRKNHOME + SIBLINGS, \
++                           sub_boot_data_2)\
++     beta_boot[i,] <- t(as.vector(boot_ind_FE_OLS$coefficients))\
++   \}\
++   ## Finally, I take the standard deviation of all of the coefficients in the now-\
++   ## filled matrix and save it as another matrix.\
++   std_err <- apply(beta_boot, 2, sd, na.rm = TRUE)\
++ \}\
+> boot_SEs <- bootstrap(data_long_100, 99)\
+> summary(ind_FE_lm)\
+\
+Call:\
+lm(formula = alpha_hat ~ ABILITY + MOTHERED + FATHERED + BRKNHOME + \
+    SIBLINGS, data = ind_data)\
+\
+Residuals:\
+     Min       1Q   Median       3Q      Max \
+-1.47684 -0.26010  0.05141  0.35823  0.82304 \
+\
+Coefficients:\
+            Estimate Std. Error t value Pr(>|t|)    \
+(Intercept) -0.85681    0.23381  -3.665  0.00041 ***\
+ABILITY     -0.10028    0.05836  -1.719  0.08900 .  \
+MOTHERED     0.03065    0.01898   1.615  0.10968    \
+FATHERED    -0.01911    0.01588  -1.203  0.23203    \
+BRKNHOME    -0.02627    0.14586  -0.180  0.85748    \
+SIBLINGS    -0.02298    0.02408  -0.954  0.34230    \
+---\
+Signif. codes:  0 \'91***\'92 0.001 \'91**\'92 0.01 \'91*\'92 0.05 \'91.\'92 0.1 \'91 \'92 1\
+\
+Residual standard error: 0.4482 on 94 degrees of freedom\
+Multiple R-squared:  0.06086,	Adjusted R-squared:  0.01091 \
+F-statistic: 1.218 on 5 and 94 DF,  p-value: 0.3066\
+\
+> print(boot_SEs)\
+ Intercept    ABILITY   MOTHERED   FATHERED   BRKNHOME   SIBLINGS \
+0.19471948 0.06445273 0.01468985 0.01100549 0.15934589 0.01635263 }
